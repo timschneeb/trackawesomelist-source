@@ -2,12 +2,11 @@ file_min_updated_hours: 5
 site:
   url: https://github.com/timschneeb/awesome-shizuku
   title: "Track Awesome Shizuku Apps"
-  description: "
-    This page tracks recent additions and changes to existing entries to the awesome-shizuku list on GitHub.
-
+  description: |
+    "This page tracks recent additions to the awesome-shizuku list on GitHub.
     
+    Note: Modified entries are also considered new. Changes to existing items will be reflected here as well.
     "
-    
 sources:
   timschneeb/awesome-shizuku:
     category: Android
