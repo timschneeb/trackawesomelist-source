@@ -58,9 +58,9 @@ export default async function main(cliOptions: CliOptions, ...args: string[]) {
 
   // 3. build html
   //
-  // if (isBuildHtml) {
-  //   await buildHtml(runOptions);
-  // }
+  if (isBuildHtml) {
+    await buildHtml(runOptions);
+  }
 
   // 3. serve site
   if (runOptions.serve) {

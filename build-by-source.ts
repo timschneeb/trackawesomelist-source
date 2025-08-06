@@ -115,28 +115,6 @@ export default async function main(
     const isDay = i === 0;
     const nav1: Nav[] = [
       {
-        name: HOME_NAV,
-        markdown_url: "/" + INDEX_MARKDOWN_PATH,
-        url: "/",
-      },
-      {
-        name: SEARCH_NAV,
-        url: pathnameToUrl("/search/"),
-      },
-      {
-        name: FEED_NAV,
-        url: pathnameToFeedUrl(fileConfig.pathname, isDay),
-      },
-      {
-        name: SUBSCRIBE_NAV,
-        url: SUBSCRIPTION_URL,
-      },
-      {
-        name: SPONSOR_NAV,
-        url: SPONSOR_URL,
-      },
-
-      {
         name: `😺 ${sourceIdentifier}`,
         url: sourceFileConfig.index ? repoMeta.url : getRepoHTMLURL(
           repoMeta.url,
@@ -147,30 +125,21 @@ export default async function main(
       {
         name: `⭐ ${formatNumber(repoMeta.stargazers_count)}`,
       },
-      {
-        name: `🏷️ ${sourceCategory}`,
-      },
     ];
 
     const nav2: Nav[] = [
       {
         name: "Daily",
-        markdown_url: pathnameToFilePath(fileConfig.pathname),
-        url: fileConfig.pathname,
+        markdown_url: "../day/README.md",
+        url: "../day/",
         active: i === 0,
       },
       {
         name: "Weekly",
 
-        markdown_url: pathnameToWeekFilePath(fileConfig.pathname),
-        url: fileConfig.pathname + "week/",
+        markdown_url: "../week/README.md",
+        url: "../week/",
         active: i === 1,
-      },
-      {
-        name: "Overview",
-        markdown_url: pathnameToOverviewFilePath(fileConfig.pathname),
-        url: fileConfig.pathname + "readme/",
-        active: i === 2,
       },
     ];
 
@@ -185,15 +154,15 @@ export default async function main(
         return {
           name: file.name,
           markdown_url: isDay
-            ? pathnameToFilePath(file.pathname)
-            : pathnameToWeekFilePath(file.pathname),
-          url: isDay ? file.pathname : file.pathname + "week/",
+            ? "../day/README.md"
+            : "../week/README.md",
+          url: isDay ? "../day/" : "../week/",
         };
       });
     }
 
-    const feedTitle = `Track ${fileConfig.name} Updates ${
-      isDay ? "Daily" : "Weekly"
+    const feedTitle = `Recent ${fileConfig.name} updates ${
+      isDay ? "(Daily)" : "(Weekly)"
     }`;
     const feedDescription = repoMeta.description;
     const groups = groupBy(
@@ -216,7 +185,7 @@ export default async function main(
     });
 
     const dailyRelativeFolder = isDay
-      ? relativeFolder
+      ? path.join(relativeFolder, `day`)
       : path.join(relativeFolder, `week`);
 
     let feedItems: FeedItem[] = groupKeys.map((key) => {
@@ -262,18 +231,18 @@ export default async function main(
       } else {
         dayInfo = parseWeekInfo(Number(key));
       }
-      summary = `${total} awesome projects updated on ${dayInfo.name}`;
+      summary = `${total} project(s) updated on ${dayInfo.name}`;
       const slug = dayInfo.path + "/";
       const itemUrl = `${domain}/${dayInfo.path}/`;
       const url = `${domain}/${slug}`;
       const feedItem: FeedItem = {
         id: itemUrl,
-        title: `${fileConfig.name} Updates on ${dayInfo.name}`,
+        title: `${fileConfig.name} updates on ${dayInfo.name}`,
         _short_title: dayInfo.name,
         _slug: slug,
         summary,
         _filepath: pathnameToFilePath("/" + slug),
-        url: itemUrl,
+        url: "",
         date_published: datePublished.toISOString(),
         date_modified: dateModified.toISOString(),
         content_text: groupMarkdown,
@@ -290,15 +259,15 @@ export default async function main(
     });
 
     const feedSeoTitle =
-      `Track ${fileConfig.name} (${sourceIdentifier}) Updates ${
-        isDay ? "Daily" : "Weekly"
+      `Recent ${fileConfig.name} (${sourceIdentifier}) updates ${
+        isDay ? "(Daily)" : "(Weekly)"
       }`;
     const feedInfo: FeedInfo = {
       ...baseFeed,
       title: feedTitle,
       _seo_title: `${feedSeoTitle} - ${siteConfig.title}`,
       _site_title: siteConfig.title,
-      description: repoMeta.description || "",
+      description: repoMeta.description + "\n\nRecent additions and updates to the [awesome-shizuku list](https://github.com/timschneeb/awesome-shizuku). This overview is updated automatically and contains the latest changes, grouped by date.",
       home_page_url: `${domain}/${dailyRelativeFolder}/`,
       feed_url: `${domain}/${dailyRelativeFolder}/feed.json`,
     };
@@ -314,7 +283,7 @@ ${nav1ToMarkdown(nav1)}
 
 ${nav2ToMarkdown(nav2)}${relativedFilesToMarkdown(relatedFiles)}${
       feedItems.map((item) => {
-        return `\n\n## [${item._short_title}](/${CONTENT_DIR}/${item._slug}${INDEX_MARKDOWN_PATH})${item.content_text}`;
+        return `\n\n## ${item._short_title}${item.content_text}`;
       }).join("")
     }`;
     if (isBuildMarkdown) {
@@ -407,128 +376,6 @@ ${
       );
       await writeTextFile(rssDistPath, feedOutput);
     }
-  }
-
-  // build overview markdown
-  // first get readme content
-
-  const buildOverviewMarkdownStartTime = Date.now();
-  const readmeContent = await getFile(sourceIdentifier, filepath);
-
-  const overviewMarkdownPath = path.join(
-    getDistRepoContentPath(),
-    relativeFolder,
-    "readme",
-    INDEX_MARKDOWN_PATH,
-  );
-  const overviewTitle = `${fileConfig.name} Overview`;
-  const nav1: Nav[] = [
-    {
-      name: HOME_NAV,
-      markdown_url: "/" + INDEX_MARKDOWN_PATH,
-      url: "/",
-    },
-    {
-      name: FEED_NAV,
-      url: pathnameToFeedUrl(fileConfig.pathname, true),
-    },
-    {
-      name: SUBSCRIBE_NAV,
-      url: SUBSCRIPTION_URL,
-    },
-    {
-      name: SPONSOR_NAV,
-      url: SPONSOR_URL,
-    },
-    {
-      name: `😺 ${sourceIdentifier}`,
-      url: sourceFileConfig.index ? repoMeta.url : getRepoHTMLURL(
-        repoMeta.url,
-        repoMeta.default_branch,
-        originalFilepath,
-      ),
-    },
-    {
-      name: `⭐ ${formatNumber(repoMeta.stargazers_count)}`,
-    },
-    {
-      name: `🏷️ ${sourceCategory}`,
-    },
-  ];
-
-  const nav2: Nav[] = [
-    {
-      name: "Daily",
-      markdown_url: pathnameToFilePath(fileConfig.pathname),
-      url: fileConfig.pathname,
-    },
-    {
-      name: "Weekly",
-
-      markdown_url: pathnameToWeekFilePath(fileConfig.pathname),
-      url: fileConfig.pathname + "week/",
-    },
-    {
-      name: "Overview",
-      markdown_url: pathnameToOverviewFilePath(fileConfig.pathname),
-      url: fileConfig.pathname + "readme/",
-      active: true,
-    },
-  ];
-
-  const readmeRendered = `# ${overviewTitle}
-
-${repoMeta.description}
-
-${nav1ToMarkdown(nav1)}
-
-${nav2ToMarkdown(nav2)}
-
----
-
-${readmeContent}
-`;
-  await writeTextFile(overviewMarkdownPath, readmeRendered);
-  const buildOverviewMarkdownEndTime = Date.now();
-  log.debug(
-    `build ${overviewMarkdownPath} success, cost ${
-      buildOverviewMarkdownEndTime - buildOverviewMarkdownStartTime
-    }ms`,
-  );
-  if (isBuildHtml) {
-    const readmeHtmlContent = await getHtmlFile(sourceIdentifier, filepath);
-    // add body, css to feed
-    // const body = renderMarkdown(readmeRendered);
-    const body = `<h1>${overviewTitle}</h1>
-<p>${repoMeta.description}</p>
-<p>${nav1ToHtml(nav1)}</p>
-<p>${nav2ToHtml(nav2)}</p>
-${readmeHtmlContent}
-`;
-    const overviewSeoTitle =
-      `${fileConfig.name} (${sourceIdentifier}) Overview`;
-    const overviewFeedInfo: FeedInfo = {
-      ...baseFeed,
-      title: overviewTitle,
-      _site_title: siteConfig.title,
-      _seo_title: `${overviewSeoTitle} - ${siteConfig.title}`,
-      description: repoMeta.description,
-      home_page_url: `${domain}/${relativeFolder}/readme/`,
-      feed_url: `${domain}/${relativeFolder}/feed.json`,
-    };
-    const htmlDoc = mustache.render(htmlIndexTemplateContent, {
-      ...overviewFeedInfo,
-      body: body,
-      CSS,
-    });
-    const htmlDistPath = path.join(
-      getPublicPath(),
-      relativeFolder,
-      "readme",
-      INDEX_HTML_PATH,
-    );
-    await writeTextFile(htmlDistPath, htmlDoc);
-    log.debug(`build ${htmlDistPath} success`);
   }
 
   return {

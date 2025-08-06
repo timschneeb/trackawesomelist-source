@@ -170,10 +170,8 @@ function uglyIsValidCategory(
   const sourceConfig = fileInfo.sourceConfig;
   const fileConfig = sourceConfig.files[fileInfo.filepath];
   const sourceIdentifier = sourceConfig.identifier;
-  if (sourceIdentifier === "KotlinBy/awesome-kotlin") {
-    if (category.startsWith("Github Trending / ")) {
-      return false;
-    }
+  if (category.startsWith("Table of contents") || category.startsWith("Annotations") || category.startsWith("License") || category.startsWith("Rish")) {
+    return false;
   }
   return true;
 }

@@ -1,7 +1,7 @@
-file_min_updated_hours: 5
+file_min_updated_hours: 3
 site:
   url: https://github.com/timschneeb/awesome-shizuku
-  title: "Track Awesome Shizuku Apps"
+  title: "Recent awesome-shizuku additions"
   description: |
     "This page tracks recent additions to the awesome-shizuku list on GitHub.
     
@@ -13,7 +13,7 @@ sources:
     files:
       README.md:
         index: true
-        name: 'Awesome Shizuku Apps'
+        name: 'awesome-shizuku'
         options:
           type: list
           min_heading_level: 4

@@ -44,9 +44,6 @@ import {
   writeTextFile,
 } from "./util.ts";
 import log from "./log.ts";
-import { getItemsByDays, getUpdatedDays, getUpdatedFiles } from "./db.ts";
-import buildBySource from "./build-by-source.ts";
-import buildByTime, { itemsToFeedItemsByDate } from "./build-by-time.ts";
 
 export default async function buildHtml(options: RunOptions) {
   const config = options.config;

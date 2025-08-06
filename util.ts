@@ -1034,7 +1034,6 @@ export function formatPagination(
 ): string {
   let text = "";
   let isWeek = currentPathname.endsWith("/week/");
-  let isOverview = currentPathname.endsWith("/readme/");
   if (page.prev || page.next) {
     text += "\n\n---";
   }
@@ -1047,17 +1046,6 @@ export function formatPagination(
     if (page.next) {
       text += `${page.prev ? "\n" : "\n\n"}- Next: [${page.next.title}](${
         pathnameToWeekFilePath(page.next.pathname)
-      })`;
-    }
-  } else if (isOverview) {
-    if (page.prev) {
-      text += `\n\n- Prev: [${page.prev.title}](${
-        pathnameToOverviewFilePath(page.prev.pathname)
-      })`;
-    }
-    if (page.next) {
-      text += `${page.prev ? "\n" : "\n\n"}- Next: [${page.next.title}](${
-        pathnameToOverviewFilePath(page.next.pathname)
       })`;
     }
   } else {

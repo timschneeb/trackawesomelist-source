@@ -14,16 +14,6 @@ import {
 } from "./interface.ts";
 import renderMarkdown from "./render-markdown.ts";
 import {
-  GITHUB_NAV,
-  GITHUB_REPO,
-  INDEX_MARKDOWN_PATH,
-  PROD_DOMAIN,
-  SEARCH_NAV,
-  SUBSCRIPTION_URL,
-  TOP_REPOS_COUNT,
-  WEBSITE_NAV,
-} from "./constant.ts";
-import {
   exists,
   formatHumanTime,
   formatNumber,
@@ -55,7 +45,6 @@ import {
 import log from "./log.ts";
 import { getItemsByDays, getUpdatedDays, getUpdatedFiles } from "./db.ts";
 import buildBySource from "./build-by-source.ts";
-import buildByTime, { itemsToFeedItemsByDate } from "./build-by-time.ts";
 
 export default async function buildMarkdown(options: RunOptions) {
   const config = options.config;
@@ -91,9 +80,7 @@ export default async function buildMarkdown(options: RunOptions) {
   const htmlIndexTemplateContent = await readTextFile(
     "./templates/index.html.mu",
   );
-  const htmlSearchTemplateContent = await readTextFile(
-    "./templates/search.html.mu",
-  );
+
   for (const sourceIdentifier of dbSourcesKeys) {
     const source = dbSources[sourceIdentifier];
     const files = source.files;
@@ -208,9 +195,6 @@ export default async function buildMarkdown(options: RunOptions) {
         recursive: true,
       });
     }
-    const rootTemplateContent = await readTextFile(
-      "./templates/root-readme.md.mu",
-    );
 
     const htmlTemplate = await readTextFile("./templates/index.html.mu");
     let commitMessage = "Automated update\n\n";
@@ -258,89 +242,6 @@ export default async function buildMarkdown(options: RunOptions) {
       " seconds",
     );
 
-    const allDays = getUpdatedDays(dbIndex, {
-      since_date: new Date(0),
-    }, true);
-    const allWeeks = getUpdatedDays(dbIndex, {
-      since_date: new Date(0),
-    }, false);
-    // only updated when there is no specific source
-    if (options.dayMarkdown) {
-      // update day file
-      let updatedDays = getUpdatedDays(dbIndex, {
-        since_date: new Date(lastCheckedAt),
-        source_identifiers: specificSourceIdentifiers,
-      }, true);
-
-      if (options.limit && options.limit > 0) {
-        updatedDays = updatedDays.slice(0, options.limit);
-      }
-
-      let updatedDayIndex = 0;
-      log.info("start to build day markdown..., total: " + updatedDays.length);
-      const startBuildDayTime = new Date();
-      for (const day of updatedDays) {
-        const builtInfo = await buildByTime(day.number, options, {
-          paginationText: getPaginationTextByNumber(day.number, allDays),
-          paginationHtml: getPaginationHtmlByNumber(day.number, allDays),
-          dbMeta,
-          dbIndex,
-        });
-        updatedDayIndex++;
-        log.debug(
-          `build day markdown [${updatedDayIndex}/${updatedDays.length}] ${day.path}`,
-        );
-        // commitMessage += builtInfo.commitMessage + "\n";
-      }
-      const endBuildDayTime = new Date();
-      const buildDayTime = endBuildDayTime.getTime() -
-        startBuildDayTime.getTime();
-      log.info(
-        "build day markdown done, cost ",
-        (buildDayTime / 1000).toFixed(2),
-        " seconds",
-      );
-
-      const startBuildWeekTime = new Date();
-      // update week file
-      let updatedWeeks = getUpdatedDays(dbIndex, {
-        since_date: new Date(lastCheckedAt),
-        source_identifiers: specificSourceIdentifiers,
-      }, false);
-      if (options.limit && options.limit > 0) {
-        updatedWeeks = updatedWeeks.slice(0, options.limit);
-      }
-
-      let updatedWeekIndex = 0;
-      log.info(
-        "start to build week markdown..., total: " + updatedWeeks.length,
-      );
-      for (const day of updatedWeeks) {
-        updatedWeekIndex++;
-        log.debug(
-          `build week markdown [${updatedWeekIndex}/${updatedWeeks.length}] ${day.path}`,
-        );
-
-        const builtInfo = await buildByTime(day.number, options, {
-          paginationText: getPaginationTextByNumber(day.number, allWeeks),
-          paginationHtml: getPaginationHtmlByNumber(day.number, allWeeks),
-          dbMeta,
-          dbIndex,
-        });
-
-        // commitMessage += builtInfo.commitMessage + "\n";
-      }
-      const endBuildWeekTime = new Date();
-      const buildWeekTime = endBuildWeekTime.getTime() -
-        startBuildWeekTime.getTime();
-      log.info(
-        "build week markdown done, cost ",
-        (buildWeekTime / 1000).toFixed(2),
-        " seconds",
-      );
-    } else {
-      log.info("skip build day markdown");
-    }
     const allFilesMeta: FileMetaWithSource[] = [];
     for (const sourceIdentifier of dbSourcesKeys) {
       const sourceMeta = dbSources[sourceIdentifier];
@@ -355,343 +256,10 @@ export default async function buildMarkdown(options: RunOptions) {
         });
       }
     }
-    // top 50 repos
-    // https://bearblog.dev/discover/
-    // Score = log10(U) + (S / D * 8600)
-    const sortedRepos = dbSourcesKeys.sort(
-      (aSourceIdentifier, bSourceIdentifier) => {
-        const sourceMeta = dbSources[aSourceIdentifier];
-        const aMeta = dbSources[aSourceIdentifier];
-        const bMeta = dbSources[bSourceIdentifier];
-        const aSourceConfig = sourcesConfig[aSourceIdentifier];
-        const bSourceConfig = sourcesConfig[bSourceIdentifier];
-        try {
-          const aIndexFileConfig = getIndexFileConfig(aSourceConfig.files);
-          const bIndexFileConfig = getIndexFileConfig(bSourceConfig.files);
-          const aIndexFileMeta = aMeta.files[aIndexFileConfig.filepath];
-          const bIndexFileMeta = bMeta.files[bIndexFileConfig.filepath];
-          const aUpdated = new Date(aIndexFileMeta.updated_at);
-          const bUpdated = new Date(bIndexFileMeta.updated_at);
-          const unmaintainedTime = new Date().getTime() -
-            2 * 365 * 24 * 60 * 60 * 1000;
-          // const flagTime = new Date("2020-01-01");
-          const aUnmaintained = aUpdated.getTime() <
-            unmaintainedTime;
-          const bUnmaintained = bUpdated.getTime() <
-            unmaintainedTime;
 
-          if (aUnmaintained && !bUnmaintained) {
-            return 1;
-          }
-          if (!aUnmaintained && bUnmaintained) {
-            return -1;
-          }
-
-          if (aUnmaintained && bUnmaintained) {
-            return 0;
-          }
-
-          const aScore = aMeta.meta.stargazers_count;
-          const aLogScore = Math.log2(aScore);
-          const bScore = bMeta.meta.stargazers_count;
-          const bLogScore = Math.log2(bScore);
-          // console.log("aLogScore", aLogScore);
-          // console.log("bLogScore", bLogScore);
-          const aUpdatedScore = (now.getTime() - aUpdated.getTime()) / 1000 /
-            604800;
-          const bUpdatedScore = (now.getTime() - bUpdated.getTime()) / 1000 /
-            604800;
-          const result = (bLogScore - bUpdatedScore) -
-            (aLogScore - aUpdatedScore);
-          // console.log("result", result);
-          return result;
-        } catch (e) {
-          log.error(
-            `failed to sort ${aSourceIdentifier} ${bSourceIdentifier}`,
-            e,
-          );
-          throw e;
-        }
-
-        // return score;
-      },
-    ).slice(0, TOP_REPOS_COUNT).map((sourceIdentifier, index) => {
-      const sourceConfig = sourcesConfig[sourceIdentifier];
-      if (!sourceConfig) {
-        log.error(`source ${sourceIdentifier} not found`);
-        return null;
-      }
-
-      const sourceFileConfig = getIndexFileConfig(sourceConfig.files);
-      const sourceMeta = dbSources[sourceIdentifier].meta;
-      const dbFileInfo =
-        dbSources[sourceIdentifier].files[sourceFileConfig.filepath];
-
-      return {
-        order: index + 1,
-        name: sourceFileConfig.name,
-        url: pathnameToFilePath(sourceFileConfig.pathname),
-        star: formatNumber(sourceMeta.stargazers_count),
-        source_url: sourceFileConfig.index ? sourceMeta.url : getRepoHTMLURL(
-          sourceConfig.url,
-          sourceMeta.default_branch,
-          sourceFileConfig.filepath,
-        ),
-        meta: sourceMeta,
-        updated: formatHumanTime(new Date(dbFileInfo.updated_at)),
-      };
-    });
     // write dbMeta
     dbMeta.checked_at = new Date().toISOString();
-    for (let i = 0; i < 2; i++) {
-      const isDay = i === 0;
-      let lastItems: Record<string, Item> = {};
-      let jsonFeedItems: Record<string, Item> = {};
-      if (isDay) {
-        lastItems = await getItemsByDays(
-          allDays.slice(0, 3).map((item) => item.number),
-          dbIndex,
-          isDay,
-        );
-        jsonFeedItems = await getItemsByDays(
-          allDays.slice(1, 15).map((item) => item.number),
-          dbIndex,
-          isDay,
-        );
-      } else {
-        lastItems = await getItemsByDays(
-          allWeeks.slice(0, 1).map((item) => item.number),
-          dbIndex,
-          isDay,
-        );
-        jsonFeedItems = await getItemsByDays(
-          allWeeks.slice(1, 4).map((item) => item.number),
-          dbIndex,
-          isDay,
-        );
-      }
 
-      // console.log("lastItems", lastItems);
-      const feedItems = itemsToFeedItemsByDate(lastItems, config, isDay);
-
-      const jsonFeedItemsByDate = itemsToFeedItemsByDate(
-        jsonFeedItems,
-        config,
-        isDay,
-      );
-      const indexMarkdownDistPath = path.join(
-        getDistRepoContentPath(),
-        isDay ? INDEX_MARKDOWN_PATH : `week/${INDEX_MARKDOWN_PATH}`,
-      );
-      const baseFeed = getBaseFeed();
-      let indexNav = "";
-      if (isDay) {
-        indexNav = `[📅 Weekly](/week/README.md) · [${SEARCH_NAV}](${
-          pathnameToUrl("/search/")
-        }) · [🔥 Feed](${
-          pathnameToFeedUrl("/", true)
-        }) · [📮 Subscribe](${SUBSCRIPTION_URL})  · [❤️ Sponsor](https://github.com/sponsors/theowenyoung) · [${GITHUB_NAV}](${GITHUB_REPO}) · [${WEBSITE_NAV}](${PROD_DOMAIN}) · 📝 ${
-          formatHumanTime(dbItemsLatestUpdatedAt)
-        } · ✅ ${formatHumanTime(new Date(dbMeta.checked_at))}`;
-      } else {
-        indexNav = `[🏠 Home](/README.md) · [${SEARCH_NAV}](${
-          pathnameToUrl("/search/")
-        }) · [🔥 Feed](${
-          pathnameToFeedUrl("/week/", true)
-        }) · [📮 Subscribe](${SUBSCRIPTION_URL}) · [❤️ Sponsor](https://github.com/sponsors/theowenyoung) · [${GITHUB_NAV}](${GITHUB_REPO}) · [${WEBSITE_NAV}](${PROD_DOMAIN}) · 📝 ${
-          formatHumanTime(dbItemsLatestUpdatedAt)
-        } · ✅ ${formatHumanTime(new Date(dbMeta.checked_at))}`;
-      }
-      const indexFeed: FeedInfo = {
-        ...baseFeed,
-        title: "Track Awesome List Updates " + (isDay ? "Daily" : "Weekly"),
-        _site_title: siteConfig.title,
-        description: config.site.description,
-        _seo_title:
-          `${config.site.title} - Track your Favorite Github Awesome List ${
-            isDay ? "Daily" : "Weekly"
-          }`,
-        home_page_url: config.site.url + (isDay ? "/" : "/week/"),
-        feed_url: config.site.url + (isDay ? "/" : "/week/") + "feed.json",
-      };
-      const groupByCategory = (sourceIdentifier: string) => {
-        const sourceConfig = sourcesConfig[sourceIdentifier];
-        if (!sourceConfig) {
-          return "Other";
-        }
-        return sourceConfig.category;
-      };
-      const listGroups = groupBy(sourcesKeys, groupByCategory);
-
-      const list: List[] = Object.keys(listGroups).sort().map((category) => {
-        const sourceIdentifiers = listGroups[category];
-        const items = sourceIdentifiers.map((sourceIdentifier: string) => {
-          const sourceConfig = sourcesConfig[sourceIdentifier];
-          const indexFileConfig = getIndexFileConfig(sourceConfig.files);
-          const sourceMeta = dbSources[sourceIdentifier]?.meta;
-          const dbFileInfo = dbSources[sourceIdentifier]
-            ?.files[indexFileConfig.filepath];
-          const item: ListItem = {
-            name: indexFileConfig.name,
-            meta: sourceMeta,
-            updated: formatHumanTime(new Date(dbFileInfo?.updated_at ?? 0)),
-            url: pathnameToFilePath(indexFileConfig.pathname),
-            star: formatNumber(sourceMeta?.stargazers_count ?? 0),
-            source_url: sourceConfig.url,
-          };
-          return item;
-        }).sort((a: ListItem, b: ListItem) => a.name.localeCompare(b.name));
-        return {
-          category,
-          items,
-        };
-      });
-      const lastItem = feedItems[feedItems.length - 1];
-      const lastItemDate = lastItem.date_published;
-      const lastItemDateObj = new Date(lastItemDate);
-      let lastDayNumber = 0;
-      if (isDay) {
-        lastDayNumber = getDayNumber(lastItemDateObj);
-      } else {
-        lastDayNumber = getWeekNumber(lastItemDateObj);
-      }
-
-      const indexPageData = {
-        sortedRepos,
-        items: feedItems,
-        list,
-        feed: indexFeed,
-        navText: indexNav,
-        paginationText: getnextPaginationTextByNumber(
-          lastDayNumber,
-          isDay ? allDays : allWeeks,
-        ),
-      };
-      // build summary.md
-      let summary = "# Track Awesome List\n\n [README](README.md)\n\n";
-      let allRepos = "\n- [All Tracked List](all-repos/README.md)";
-      const topReposText = sortedRepos.reduce((acc, item) => {
-        return acc + `\n  - [${item.name}](${pathnameToFilePath(item.url)})`;
-      }, "\n- [Top Repos](top/README.md)");
-      Object.keys(listGroups).forEach((category) => {
-        const sourceIdentifiers = listGroups[category];
-        allRepos += `\n  - [${category}](${slug(category)}/README.md)`;
-        const items = sourceIdentifiers.map((sourceIdentifier: string) => {
-          const sourceConfig = sourcesConfig[sourceIdentifier];
-          const indexFileConfig = getIndexFileConfig(sourceConfig.files);
-          const filename = indexFileConfig.name;
-          allRepos += `\n    - [${filename}](${
-            pathnameToFilePath(indexFileConfig.pathname)
-          })
-      - [weekly](${pathnameToFilePath(indexFileConfig.pathname + "week/")})
-      - [overview](${
-            pathnameToFilePath(indexFileConfig.pathname + "readme/")
-          })`;
-        });
-      });
-
-      // add days and weeks to summary
-
-      // group days by utc year, month
-      const daysByYear = groupBy(allDays, "year");
-      let daysText = "\n- [Days](daily/README.md)";
-      Object.keys(daysByYear).sort((a, b) => Number(b) - Number(a))
-        .forEach(
-          (year) => {
-            daysText += `\n  - [${year}](${year}/month/README.md)`;
-            const daysByMonth = groupBy(daysByYear[year], "month");
-            Object.keys(daysByMonth).sort((a, b) => Number(b) - Number(a))
-              .forEach((month) => {
-                daysText +=
-                  `\n    - [${month}](${year}/${month}/day/README.md)`;
-                const days = daysByMonth[month] as DayInfo[];
-                days.sort((a: DayInfo, b: DayInfo) =>
-                  Number(b.day) - Number(a.day)
-                )
-                  .forEach(
-                    (day: DayInfo) => {
-                      daysText +=
-                        `\n      - [${day.name}](${day.path}/README.md)`;
-                    },
-                  );
-              });
-          },
-        );
-      // group weeks by utc year, month
-      // add weeks to summary
-      const weeksByYear = groupBy(allWeeks, "year");
-      let weeksText = "\n- [Weeks](week/README.md)";
-      Object.keys(weeksByYear).sort((a, b) => Number(b) - Number(a))
-        .forEach((year) => {
-          weeksText += `\n  - [${year}](${year}/week/README.md)`;
-          const weeks = weeksByYear[year] as WeekOfYear[];
-          weeks.sort((a, b) => Number(b.week) - Number(a.week)).forEach(
-            (week: WeekOfYear) => {
-              weeksText += `\n    - [${week.name}](${week.path}/README.md)`;
-            },
-          );
-        });
-
-      summary += topReposText + allRepos + daysText + weeksText;
-      const summaryMarkdownDistPath = path.join(
-        getDistRepoContentPath(),
-        "SUMMARY.md",
-      );
-      await Deno.writeTextFile(summaryMarkdownDistPath, summary);
-
-      // write to index
-      const itemMarkdownContentRendered = mustache.render(
-        rootTemplateContent,
-        indexPageData,
-      );
-      if (isBuildMarkdown) {
-        await writeTextFile(indexMarkdownDistPath, itemMarkdownContentRendered);
-
-        log.info(`build ${indexMarkdownDistPath} success`);
-      }
-      if (isBuildSite) {
-        const body = renderMarkdown(itemMarkdownContentRendered);
-        const htmlDoc = mustache.render(htmlIndexTemplateContent, {
-          ...indexFeed,
-          body,
-          CSS,
-        });
-
-        const htmlPath = path.join(
-          getPublicPath(),
-          isDay ? "index.html" : "week/index.html",
-        );
-        await writeTextFile(htmlPath, htmlDoc);
-
-        // build feed json
-        const feedJsonDistPath = path.join(
-          getPublicPath(),
-          isDay ? "feed.json" : `week/feed.json`,
-        );
-        const finalFeed = {
-          ...indexFeed,
-          items: jsonFeedItemsByDate,
-        };
-
-        await writeJSONFile(feedJsonDistPath, finalFeed);
-        // build rss
-
-        const rssFeed = { ...finalFeed };
-        rssFeed.items = rssFeed.items.map(({ content_text: _, ...rest }) =>
-          rest
-        );
-        // @ts-ignore: node modules
-        const feedOutput = jsonfeedToAtom(rssFeed, {
-          language: "en",
-        });
-        const rssDistPath = path.join(
-          getPublicPath(),
-          isDay ? "rss.xml" : `week/rss.xml`,
-        );
-
-        await writeTextFile(rssDistPath, feedOutput);
-      }
-    }
     // build week data
     // copy static files
     if (isBuildSite) {
@@ -710,13 +278,6 @@ export default async function buildMarkdown(options: RunOptions) {
       }
     }
 
-    // copy readme to dist
-    const contentReadmePath = path.join(
-      getDistRepoContentPath(),
-      "README.md",
-    );
-    const readmeDistPath = path.join(getDistRepoPath(), "README.md");
-    await Deno.copyFile(contentReadmePath, readmeDistPath);
     const endTime = new Date();
 
     log.info(
