@@ -4,7 +4,7 @@ import {
   writeJSONFile,
 } from "./util.ts";
 import log from "./log.ts";
-import dbInitMeta from "./db-meta-init.json" assert { type: "json" };
+import dbInitMeta from "./db-meta-init.json" with { type: "json" };
 export default async function initDb() {
   const dbMetaFilePath = getDbMetaFilePath();
   const dbIndexFilePath = getDbIndexFilePath();

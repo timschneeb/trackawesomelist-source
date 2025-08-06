@@ -78,7 +78,7 @@ export default function (
       // ignore it
       let internalLinkCount = 0;
       let externalLinkCount = 0;
-      visit(childrenToRoot(rootNode.children), "link", (node) => {
+      visit(childrenToRoot(rootNode.children), "link", (node: { url: string; }) => {
         if (!node.url.startsWith("#")) {
           internalLinkCount++;
         } else {
@@ -99,9 +99,28 @@ export default function (
   const min_heading_level = parseOptions.min_heading_level ||
     lowestHeadingLevel;
   const funcs: (() => Promise<DocItem>)[] = [];
+
+  const categoryHierarchy: string[] = [];
+
   for (const rootNode of validSections) {
     if (rootNode.type === "heading") {
       currentLevel = rootNode.depth;
+
+      if (
+        currentLevel <= min_heading_level && currentLevel >= max_heading_level
+      ) {
+        console.log(currentLevel - max_heading_level, "; ", formatCategory(
+            childrenToRoot(rootNode.children),
+          ))
+
+        // Remove higher levels
+        categoryHierarchy.splice(currentLevel - max_heading_level);
+
+        // Replace level with current
+        categoryHierarchy.splice(currentLevel - max_heading_level, 0, formatCategory(
+            childrenToRoot(rootNode.children),
+          ));
+      }
 
       if (
         currentLevel < min_heading_level && currentLevel >= max_heading_level
@@ -117,16 +136,7 @@ export default function (
     } else if (rootNode.type === "list") {
       for (const item of rootNode.children) {
         if (item.type === "listItem") {
-          let category = "";
-          if (currentCategory) {
-            category = currentCategory.trim().replace(/\n/g, " ");
-          }
-          if (currentSubCategory) {
-            if (category) {
-              category += " / ";
-            }
-            category += currentSubCategory.trim().replace(/\n/g, " ");
-          }
+          let category = categoryHierarchy.join(" / ").trim().replace(/\n/g, " ");
           const itemIdentifier = uglyFormatItemIdentifier(fileInfo, item);
           // console.log("itemIdentifier", itemIdentifier);
           if (uglyIsValidCategory(fileInfo, category)) {
