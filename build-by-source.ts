@@ -113,19 +113,6 @@ export default async function main(
   for (let i = 0; i < 2; i++) {
     const buildMarkdownStartTime = Date.now();
     const isDay = i === 0;
-    const nav1: Nav[] = [
-      {
-        name: `😺 ${sourceIdentifier}`,
-        url: sourceFileConfig.index ? repoMeta.url : getRepoHTMLURL(
-          repoMeta.url,
-          repoMeta.default_branch,
-          originalFilepath,
-        ),
-      },
-      {
-        name: `⭐ ${formatNumber(repoMeta.stargazers_count)}`,
-      },
-    ];
 
     const nav2: Nav[] = [
       {
@@ -278,8 +265,6 @@ export default async function main(
     const markdownDoc = `# ${feed.title}${
       feed.description ? `\n\n${feed.description}` : ""
     }
-
-${nav1ToMarkdown(nav1)}
 
 ${nav2ToMarkdown(nav2)}${relativedFilesToMarkdown(relatedFiles)}${
       feedItems.map((item) => {
