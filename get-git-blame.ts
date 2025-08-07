@@ -49,7 +49,7 @@ export default async function getGitBlame(
     "--format=%H",
     "--regexp-ignore-case",
     "--grep=\\[silent\\]",
-  ]
+  ];
 
   const logProcess = Deno.run({
     logCmd,
