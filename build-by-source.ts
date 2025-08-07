@@ -292,7 +292,6 @@ ${nav2ToMarkdown(nav2)}${relativedFilesToMarkdown(relatedFiles)}${
 
       const body = `<h1>${feed.title}</h1>
 ${feed.description ? "<p>" + feed.description + "</p>" : ""}
-<p>${nav1ToHtml(nav1)}</p>
 <p>${nav2ToHtml(nav2)}</p>
 ${relativedFilesToHtml(relatedFiles)}
 ${
