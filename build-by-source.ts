@@ -254,7 +254,7 @@ export default async function main(
       title: feedTitle,
       _seo_title: `${feedSeoTitle} - ${siteConfig.title}`,
       _site_title: siteConfig.title,
-      description: "Recent additions and updates to the [awesome-shizuku list](https://github.com/timschneeb/awesome-shizuku). This overview is updated automatically and contains the latest changes, grouped by date. Note that changes to existing entries are also included.",
+      description: "Recent additions and updates to the [awesome-shizuku list](https://github.com/timschneeb/awesome-shizuku). This overview is updated automatically and contains the latest changes, grouped by date. Please note that changes to existing entries are also considered 'new' and get bumped to the top.",
       home_page_url: `${domain}/${dailyRelativeFolder}/`,
       feed_url: `${domain}/${dailyRelativeFolder}/feed.json`,
     };
