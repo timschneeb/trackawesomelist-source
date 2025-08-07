@@ -134,9 +134,12 @@ export default function (
         );
       }
     } else if (rootNode.type === "list") {
+      // remove top-level apps heading
+      let filteredHierarchy = categoryHierarchy.at(0) == "Apps" ? categoryHierarchy.slice(1) : categoryHierarchy;
+
       for (const item of rootNode.children) {
         if (item.type === "listItem") {
-          let category = categoryHierarchy.join(" / ").trim().replace(/\n/g, " ");
+          let category = filteredHierarchy.join(" / ").trim().replace(/\n/g, " ");
           const itemIdentifier = uglyFormatItemIdentifier(fileInfo, item);
           // console.log("itemIdentifier", itemIdentifier);
           if (uglyIsValidCategory(fileInfo, category)) {
