@@ -42,8 +42,7 @@ export default async function getGitBlame(
   gitPath = "git",
 ): Promise<Map<number, LineInfo>> {
   // get excluded commits
-  const logCmd = [
-    gitPath,
+  const logArgs = [
     "--no-pager",
     "log",
     "--format=%H",
@@ -52,7 +51,7 @@ export default async function getGitBlame(
   ];
 
   const logProcess = Deno.run({
-    logCmd,
+    cmd: [gitPath, ...logArgs],
     cwd: options.workTree,
     stdin: "piped",
     stdout: "piped",
@@ -81,7 +80,7 @@ export default async function getGitBlame(
   }
 
   for await (const line of readLines(logProcess.stdout)) {
-    args.push(`--no-ignore-rev=${line}`);
+    args.push(`--ignore-rev=${line}`);
   }
 
   const cmd = [gitPath, ...args, "--", filename];

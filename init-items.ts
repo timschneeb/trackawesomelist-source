@@ -127,6 +127,7 @@ export default async function initItems(
           latestUpdatedAt = commitDate;
         }
       } else {
+        console.warn(`No info for ${docItem.formatedMarkdown}`)
         throw new Error(
           `no commit info for ${source.identifier} ${file} ${docItem.line}`,
         );
