@@ -41,6 +41,25 @@ export default async function getGitBlame(
   options: Partial<BlameOptions> = {},
   gitPath = "git",
 ): Promise<Map<number, LineInfo>> {
+  // get excluded commits
+  const logCmd = [
+    gitPath,
+    "--no-pager",
+    "log",
+    "--format=%H",
+    "--regexp-ignore-case",
+    "--grep=\\[silent\\]",
+  ]
+
+  const logProcess = Deno.run({
+    logCmd,
+    cwd: options.workTree,
+    stdin: "piped",
+    stdout: "piped",
+  });
+
+
+
   /**
    * @see {@link https://git-scm.com/docs/git-blame#_options}
    */
@@ -60,6 +79,11 @@ export default async function getGitBlame(
   if (typeof options.rev === "string") {
     args.push(options.rev);
   }
+
+  for await (const line of readLines(logProcess.stdout)) {
+    args.push(`--no-ignore-rev=${line}`);
+  }
+
   const cmd = [gitPath, ...args, "--", filename];
   const process = Deno.run({
     cmd,
