@@ -244,7 +244,8 @@ export default async function main(
 
 ${relativedFilesToMarkdown(relatedFiles)}${
       feedItems.map((item) => {
-        if((Date.now() - new Date(item.date_modified).getTime()) / (1000 * 3600 * 24 * 365) > 1)
+        // Hide entries older than 1 year
+        if((Date.now() - new Date(item.date_modified).getTime()) / (1000 * 3600 * 24 * 365) <= 1)
         return `\n\n## ${item._short_title}${item.content_text}`;
       }).join("")
     }
