@@ -244,15 +244,16 @@ export default async function main(
 
 ${relativedFilesToMarkdown(relatedFiles)}${
       feedItems.map((item) => {
+        if((Date.now() - new Date(item.date_modified).getTime()) / (1000 * 3600 * 24 * 365) > 1)
         return `\n\n## ${item._short_title}${item.content_text}`;
       }).join("")
     }
     
-    _________________
-    View the full list at [timschneeb/awesome-shizuku](https://github.com/timschneeb/awesome-shizuku).
+_________________
+View the full list at [timschneeb/awesome-shizuku](https://github.com/timschneeb/awesome-shizuku).
 
 
-    The changelog generator is based on [my fork of trackawesomelist](https://github.com/timschneeb/trackawesomelist-source/tree/shizuku-tracking).
+The changelog generator is based on [my fork of trackawesomelist](https://github.com/timschneeb/trackawesomelist-source/tree/shizuku-tracking).
     `;
     if (isBuildMarkdown) {
       const markdownDistPath = path.join(
