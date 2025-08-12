@@ -250,9 +250,9 @@ ${relativedFilesToMarkdown(relatedFiles)}${
       }).join("")
     }
 
-## Older than 1 year
+## Older than one year
 
-This changelog only contains entries modified within the last year. If you want to see older entries.
+This changelog only contains entries modified within the last year. 
 
 View the full list at [awesome-shizuku](https://github.com/timschneeb/awesome-shizuku).
 
