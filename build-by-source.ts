@@ -249,9 +249,14 @@ ${relativedFilesToMarkdown(relatedFiles)}${
         return `\n\n## ${item._short_title}${item.content_text}`;
       }).join("")
     }
-    
+
+## Older than 1 year
+
+This changelog only contains entries modified within the last year. If you want to see older entries.
+
+View the full list at [awesome-shizuku](https://github.com/timschneeb/awesome-shizuku).
+
 _________________
-View the full list at [timschneeb/awesome-shizuku](https://github.com/timschneeb/awesome-shizuku).
 
 
 The changelog generator is based on [my fork of trackawesomelist](https://github.com/timschneeb/trackawesomelist-source/tree/shizuku-tracking).
