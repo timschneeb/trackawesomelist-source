@@ -110,25 +110,9 @@ export default async function main(
     relativeFolder = path.join(relativeFolder, originalFilepathWithoutExt);
   }
   const baseFeed = getBaseFeed();
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 1; i++) {
     const buildMarkdownStartTime = Date.now();
-    const isDay = i === 0;
-
-    const nav2: Nav[] = [
-      {
-        name: "Daily",
-        markdown_url: "../day/README.md",
-        url: "../day/",
-        active: i === 0,
-      },
-      {
-        name: "Weekly",
-
-        markdown_url: "../week/README.md",
-        url: "../week/",
-        active: i === 1,
-      },
-    ];
+    const isDay = true;
 
     let relatedFiles: Nav[] = [];
     if (sourceFileConfig.index && Object.keys(sourceConfig.files).length > 1) {
@@ -140,21 +124,17 @@ export default async function main(
         const file = files[fileKey];
         return {
           name: file.name,
-          markdown_url: isDay
-            ? "../day/README.md"
-            : "../week/README.md",
-          url: isDay ? "../day/" : "../week/",
+          markdown_url: "README.md",
+          url: "README.md",
         };
       });
     }
 
-    const feedTitle = `Recent ${fileConfig.name} updates ${
-      isDay ? "(Daily)" : "(Weekly)"
-    }`;
+    const feedTitle = `Recent ${fileConfig.name} updates`;
     const feedDescription = repoMeta.description;
     const groups = groupBy(
       items,
-      isDay ? "updated_day" : "updated_week",
+      "updated_day",
     ) as Record<
       string,
       Item[]
@@ -171,9 +151,7 @@ export default async function main(
       }
     });
 
-    const dailyRelativeFolder = isDay
-      ? path.join(relativeFolder, `day`)
-      : path.join(relativeFolder, `week`);
+    const dailyRelativeFolder = relativeFolder;
 
     let feedItems: FeedItem[] = groupKeys.map((key) => {
       const groupItems = groups[key];
@@ -246,9 +224,7 @@ export default async function main(
     });
 
     const feedSeoTitle =
-      `Recent ${fileConfig.name} (${sourceIdentifier}) updates ${
-        isDay ? "(Daily)" : "(Weekly)"
-      }`;
+      `Recent ${fileConfig.name} (${sourceIdentifier}) updates`;
     const feedInfo: FeedInfo = {
       ...baseFeed,
       title: feedTitle,
@@ -266,11 +242,18 @@ export default async function main(
       feed.description ? `\n\n${feed.description}` : ""
     }
 
-${nav2ToMarkdown(nav2)}${relativedFilesToMarkdown(relatedFiles)}${
+${relativedFilesToMarkdown(relatedFiles)}${
       feedItems.map((item) => {
         return `\n\n## ${item._short_title}${item.content_text}`;
       }).join("")
-    }`;
+    }
+    
+    _________________
+    View the full list at [timschneeb/awesome-shizuku](https://github.com/timschneeb/awesome-shizuku).
+
+
+    The changelog generator is based on [my fork of trackawesomelist](https://github.com/timschneeb/trackawesomelist-source/tree/shizuku-tracking).
+    `;
     if (isBuildMarkdown) {
       const markdownDistPath = path.join(
         getDistRepoContentPath(),
@@ -292,7 +275,6 @@ ${nav2ToMarkdown(nav2)}${relativedFilesToMarkdown(relatedFiles)}${
 
       const body = `<h1>${feed.title}</h1>
 ${feed.description ? "<p>" + feed.description + "</p>" : ""}
-<p>${nav2ToHtml(nav2)}</p>
 ${relativedFilesToHtml(relatedFiles)}
 ${
         feedItems.map((item) => {
